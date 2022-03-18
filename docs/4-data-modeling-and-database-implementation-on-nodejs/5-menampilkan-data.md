@@ -13,7 +13,7 @@ Tambahkan code berikut pada file index.js (root)
 ## Mengambil koneksi database
 
 ```js
-const db = require("../connection/db");
+const db = require('../connection/db');
 ```
 
 ## Mengambil data dan mengirim data ke file Handlebars
@@ -112,3 +112,14 @@ Contoh code
   {{/each}}
 </div>
 ```
+
+<img alt="image1" src={useBaseUrl('img/docs/image-5-1.png')} height="350px"/>
+
+<br />
+<br />
+
+<div>
+<a class="btn-demo" href="https://personal-web-chapter-2.herokuapp.com/blog">
+Demo
+</a>
+</div>

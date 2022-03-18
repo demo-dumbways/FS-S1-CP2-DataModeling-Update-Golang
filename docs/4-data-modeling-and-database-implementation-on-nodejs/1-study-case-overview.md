@@ -3,7 +3,7 @@ sidebar_position: 1
 slug: /
 ---
 
-# Study Case Overview
+# 1. Study Case Overview
 
 import useBaseUrl from '@docusaurus/useBaseUrl';
 

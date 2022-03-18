@@ -35,26 +35,32 @@ Pada tahap ini, kita akan mencoba menghubungkan database `PostgreSQL` dengan apl
   <br />
   <br />
 
+Buatlah kondisi jika sudah di deploy menggunakan koneksi yang isProduction, jika tidak menggunakan koneksi local 
+
   ```js title=db.js
-  const { Pool } = require("pg");
+  const { Pool } = require('pg')
 
-  const pgUser = "ctukurnlfjbcbe";
-  const pgPassword =
-    "9ee6611f11cdd4c2721313d5c479fc4d88ca7aadaa448edf4e40dcea29c16eb9";
-  const pgHost = "ec2-35-175-68-90.compute-1.amazonaws.com";
-  const pgPort = 5432;
-  const pgDatabase = ctukurnlfjbcbe;
+  const isProduction = process.env.NODE_ENV === "production";
+  let pool
 
-  const connectionString = `postgres://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
+  if (isProduction) {
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false,
+        },
+    });
+  } else {
 
-  const pool = new Pool({
-    connectionString: connectionString,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  });
+    pool = new Pool({
+        database: process.env.PG_DATABASE,
+        port: process.env.PG_PORT,
+        user: process.env.PG_USER,
+        password: process.env.PG_PASSWORD
+    })
 
-  module.exports = pool;
+  }
+  module.exports = pool
   ```
 
   Pada code diatas, kita memanggil package `pg` dan melakukan konfigurasi untuk koneksi database.
