@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+        ebook:
+             build: .
+             container_name: fs-s1-cp2-data-modelling
+             image: registry.mejik.xyz/ebook/fs-s1-cp2-data-modelling
+             ports:
+                     - 3025:3000
