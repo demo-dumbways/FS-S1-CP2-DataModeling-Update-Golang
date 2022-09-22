@@ -8,112 +8,174 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 Pada tahap ini, kita akan mencoba menampilkan seluruh data dari tabel `blog`.
 
-Tambahkan code berikut pada file index.js (root)
+Tambahkan code berikut pada file main.go (root)
 
 ## Mengambil koneksi database
+Hal pertama yang perlu dilakukan untuk fetching data dari database adalah melakukan koneksi ke database
 
-```js
-const db = require('../connection/db');
+```go {6} title="main.go"
+// continuation this code same like before
+
+func main() {
+	route := mux.NewRouter()
+
+	connection.DatabaseConnect()
+
+	// static folder
+	route.PathPrefix("/public/").Handler(http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))
+
+	// routing
+	route.HandleFunc("/", helloWorld).Methods("GET")
+	route.HandleFunc("/home", home).Methods("GET").Name("home")
+	route.HandleFunc("/blog", blogs).Methods("GET")
+	route.HandleFunc("/blog/{id}", blogDetail).Methods("GET")
+	route.HandleFunc("/add-blog", formBlog).Methods("GET")
+	route.HandleFunc("/blog", addBlog).Methods("POST")
+	route.HandleFunc("/delete-blog/{id}", deleteBlog).Methods("GET")
+	route.HandleFunc("/contact-me", contactMe).Methods("GET")
+
+	fmt.Println("Server running on port 5000")
+	http.ListenAndServe("localhost:5000", route)
+}
+
+// continuation this code same like before
 ```
 
 ## Mengambil data dan mengirim data ke file Handlebars
 
-Hal pertama yang perlu dilakukan untuk fetching data dari database adalah melakukan koneksi ke database, kemudian kita mengeksekusi script `SELECT * FROM tb_blog` untuk mengambil data dari database. Data yang dikembalikan oleh script tersebut akan tersimpan didalam parameter `result` dan kita simpan kedalam variable `data`. Kemudian kita melakukan manipulasi property pada object data blog, yaitu menambahkan `post_at`, `post_age`, dan `isLogin`.
+Kemudian kita mengeksekusi script `SELECT * FROM tb_blog` untuk mengambil data dari database. Data yang dikembalikan oleh script tersebut akan tersimpan didalam parameter `rows` dan kita simpan kedalam variable `Blog`. 
 
-<a class="btn-example-code" href="https://github.com/demo-dumbways/ebook-code-result-chapter-2/blob/day4-2.fetch-data/api/index.js">
+Pertama kita harus membuat sebuahn struct yang nantinya akan menyimpan seluruh data blog yang kita dapatkan dari database
+
+<a class="btn-example-code" href="">
 Contoh code
 </a>
 
 <br />
 <br />
 
-```js title=index.js {8-37}
-app.get('/home', function (req, res) {
-    setHeader(res)
-    res.render('index')
-})
+```go {4-13} title="main.go"
+// continuation this code same like before
+// this code below var Data = map[string]interface{}{
 
-const isLogin = true
+type Blog struct {
+	Id          int
+	Title       string
+	Image       string
+	Post_date   time.Time
+	Format_date string
+	Author      string
+	Content     string
+  IsLogin     bool
+}
 
-app.get('/blog', function (req, res) {
-    setHeader(res)
+// continuation this code same like before
+```
 
-    db.connect((err, client, done) => {
-        if (err) throw err
+selanjutnya kita mulai melakukan fetching data dari database dan kemua kita melakukan manipulasi property pada object data blog, yaitu menambahkan data `post_at`, `author`, dan `isLogin` yang tidak kita dapatkan dari database.
 
-        client.query('SELECT * FROM tb_blog', (err, result) => {
-            done()
-            if (err) throw
+<a class="btn-example-code" href="">
+Contoh code
+</a>
 
-            let data = result.rows
+<br />
+<br />
 
-            data = data.map((blog) => {
-                return {
-                    ...blog,
-                    post_at: getFullTime(blog.post_at),
-                    post_age: getDistanceTime(blog.post_at),
-                    isLogin: isLogin
-                }
-            })
+```go {14-36} title="main.go"
+// continuation this code same like before
+// this code below func home(w http.ResponseWriter, r *http.Request) {
 
-            res.render(
-                'blog',
-                {
-                    isLogin: isLogin,
-                    blogs: data
-                })
-        })
-    })
-})
+func blogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-app.get('/blog/:id', function (req, res) {
-    const blogId = req.params.id
-    const blog = blogs.find((item) => item.id == blogId);
-    setHeader(res)
-    res.render('blog-detail', { blog });
-})
+	var tmpl, err = template.ParseFiles("views/blog.html")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("message : " + err.Error()))
+		return
+	}
+
+	rows, _ := connection.Conn.Query(context.Background(), "SELECT id, title, image, content, post_at FROM blog ORDER BY id DESC")
+
+	var result []Blog
+	for rows.Next() {
+		var each = Blog{}
+
+		var err = rows.Scan(&each.Id, &each.Title, &each.Image, &each.Content, &each.Post_date)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		each.Author = "Ilham Fathullah"
+		each.Format_date = each.Post_date.Format("2 January 2006")
+    each.IsLogin = true
+
+		result = append(result, each)
+	}
+
+	respData := map[string]interface{}{
+		"Data":  Data,
+		"Blogs": result,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, respData)
+}
+
+// continuation this code same like before
 ```
 
 ## Menampilkan data
 
 Tambahkan code berikut pada bagian daftar blog pada halaman `blog`
 
-<a class="btn-example-code" href="https://github.com/demo-dumbways/ebook-code-result-chapter-2/blob/day4-2.fetch-data/views/blog.hbs">
+<a class="btn-example-code" href="">
 Contoh code
 </a>
 
 <br />
 <br />
 
-```html {2,8,15,18,20,22} title=blog.hbs
+```html {3,7,9,15,20,23,27,30,34} title="blog.html"
 <div id="contents" class="blog-list">
-  {{#each blogs}}
-  <div class="blog-list-item">
-    <div class="blog-image">
-      <img src="/public/assets/blog-img.png" alt="" />
+    <!-- conditional post blog -->
+    {{if .Data.IsLogin}}
+    <div class="button-group w-100">
+      <a href="/add-blog" class="btn-post">Add New Blog</a>
     </div>
-    <div class="blog-content">
-      {{#if this.isLogin}}
-      <div class="btn-group">
-        <a class="btn-edit" href="/">Edit Post</a>
-        <a href="/delete-blog/{{this.id}}" class="btn-delete">Delete Blog</a>
+    {{end}}
+    <!-- dynamic content would be here -->
+    {{range $index, $data := .Blogs}}
+    <div class="blog-list-item">
+      <div class="blog-image">
+        <img src="/public/assets/blog-img.png" alt="Pasar Coding di Indonesia Dinilai Masih Menjanjikan" />
       </div>
-      {{/if}}
-      <h1>
-        <a href="/detail-blog/{{this.id}}" target="_blank">{{this.title}}</a>
-      </h1>
-      <div class="detail-blog-content">{{this.post_at}} | {{this.author}}</div>
-      <p>{{this.content}}</p>
-      <div style="text-align: right">
-        <span style="font-size: 15px; color: grey">{{post_age}}</span>
+      <div class="blog-content">
+        {{if $data.IsLogin}}
+        <div class="button-group">
+          <a class="btn-edit">Edit Post</a>
+          <a class="btn-post" href="/delete-blog/{{$data.Id}}">Delete Blog</a>
+        </div>
+        {{end}}
+        <h1>
+          <a href="/blog/{{$data.Id}}" target="_blank">
+            {{$data.Title}}
+          </a>
+        </h1>
+        <div class="detail-blog-content">
+          {{$data.Format_date}} | {{$data.Author}}
+        </div>
+        <p>
+          {{$data.Content}}
+        </p>
       </div>
     </div>
+    {{end}}
   </div>
-  {{/each}}
-</div>
 ```
 
-<img alt="image1" src={useBaseUrl('img/docs/image-5-1.png')} height="350px"/>
+<img alt="image1" src={useBaseUrl('img/docs/image-4-50.png')} height="350px"/>
 
 <br />
 <br />

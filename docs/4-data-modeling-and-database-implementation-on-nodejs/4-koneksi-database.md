@@ -6,61 +6,59 @@ sidebar_position: 4
 
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
-Pada tahap ini, kita akan mencoba menghubungkan database `PostgreSQL` dengan aplikasi web yang kita buat dengan `NodeJs`.
+Pada tahap ini, kita akan mencoba menghubungkan database `PostgreSQL` dengan aplikasi web yang kita buat dengan `Golang`.
 
-- Instal package `pg`, package ini akan membantu kita untuk melakukan koneksi, mengirim perintah/script, dan mengirim data ke database.
+- Instal package `pgx`, package ini akan membantu kita untuk melakukan koneksi, mengirim perintah/script, dan mengirim data ke database.
 
   ```shell
-  npm i pg
+ go get -u github.com/jackc/pgx/v4
   ```
 
 - Buatlah sebuah folder dengan nama `connection` dan didalam folder tersebut buatlah sebuah file dengan nama `db.js`
 
   ```text {1-2}
   +-- connection
-      +-- db.js
+      +-- postgre.go
   +-- public
   +-- views
-  +-- package-lock.json
-  +-- package.json
-  +-- index.js
+  +-- go.mod
+  +-- go.sum
+  +-- main.go
   ```
 
-- Kemudian tambahkan code berikut pada file `db.js`
+- Kemudian tambahkan code berikut pada file `postgre.go`
 
-  <a class="btn-example-code" href="https://github.com/demo-dumbways/ebook-code-result-chapter-2/tree/day4-1.database-connection">
+  <a class="btn-example-code" href="">
   Contoh code
   </a>
 
   <br />
-  <br />
+  <br /> 
 
-Buatlah kondisi jika sudah di deploy menggunakan koneksi yang isProduction, jika tidak menggunakan koneksi local 
+```go title="postgre.go"
+  package connection
 
-  ```js title=db.js
-  const { Pool } = require('pg')
+  import (
+    "context"
+    "fmt"
+    "os"
 
-  const isProduction = process.env.NODE_ENV === "production";
-  let pool
+    "github.com/jackc/pgx/v4"
+  )
 
-  if (isProduction) {
-    pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false,
-        },
-    });
-  } else {
+  var Conn *pgx.Conn
 
-    pool = new Pool({
-        database: process.env.PG_DATABASE,
-        port: process.env.PG_PORT,
-        user: process.env.PG_USER,
-        password: process.env.PG_PASSWORD
-    })
+  func DatabaseConnect() {
+    var err error
+    databaseUrl := "postgres://postgres:root@localhost:5432/db_blog"
+    Conn, err = pgx.Connect(context.Background(), databaseUrl)
+    if err != nil {
+      fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+      os.Exit(1)
+    }
+    fmt.Println("Success connect to database")
 
   }
-  module.exports = pool
-  ```
+```
 
-  Pada code diatas, kita memanggil package `pg` dan melakukan konfigurasi untuk koneksi database.
+  Pada code diatas, kita memanggil package `pgx` dan melakukan konfigurasi untuk koneksi database.
