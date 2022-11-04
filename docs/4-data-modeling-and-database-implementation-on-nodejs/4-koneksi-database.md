@@ -28,7 +28,7 @@ Pada tahap ini, kita akan mencoba menghubungkan database `PostgreSQL` dengan apl
 
 - Kemudian tambahkan code berikut pada file `postgre.go`
 
-  <a class="btn-example-code" href="">
+  <a class="btn-example-code" href="https://github.com/demo-dumbways/ebook-code-result-chapter-2-golang/blob/day4-1-database-connection/connection/postgre.go">
   Contoh code
   </a>
 
